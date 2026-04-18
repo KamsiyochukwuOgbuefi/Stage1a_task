@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="output.css">
+
+<style>
+@keyframes fadeIn {
+  from { opacity:0; transform: translateY(10px);}
+  to { opacity:1; transform: translateY(0);}
+}
+</style>
+
+<title>Advanced Todo Card</title>
+</head>
+
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+<article id="card"
+  data-testid="test-todo-card"
+  class="w-full max-w-md bg-white rounded-xl shadow p-5 space-y-5 transition animate-[fadeIn_0.4s]"
+>
+
+  <!-- PRIORITY INDICATOR -->
+  <div data-testid="test-todo-priority-indicator" id="priorityIndicator"
+    class="w-2 h-full absolute left-0 top-0 rounded-l-xl bg-yellow-400"></div>
+
+  <!-- VIEW MODE -->
+  <div id="viewMode">
+
+    <h3 data-testid="test-todo-title" id="title" class="font-semibold text-lg mb-3">
+      Study Data Structures
+    </h3>
+
+    <!-- COLLAPSIBLE -->
+    <div data-testid="test-todo-collapsible-section" id="descContainer" class="overflow-hidden max-h-16  mb-1">
+      <p data-testid="test-todo-description" id="desc" class="text-sm text-gray-600">
+        Revise stacks, queues, linked lists, recursion and algorithm complexity in depth for upcoming exams.
+      </p>
+    </div>
+
+    <button data-testid="test-todo-expand-toggle" id="expandBtn"
+      class="text-blue-500 text-sm"
+      aria-expanded="false"
+      aria-controls="descContainer">
+      Show more
+    </button>
+
+    <!-- STATUS + PRIORITY -->
+    <div class="flex justify-between items-center">
+
+      <span data-testid="test-todo-priority" id="priorityText">Medium</span>
+
+      <select data-testid="test-todo-status-control" id="statusControl"
+        class="text-sm border rounded px-2 py-1">
+        <option>Pending</option>
+        <option selected>In Progress</option>
+        <option>Done</option>
+      </select>
+
+    </div>
+
+    <!-- DATE -->
+    <time data-testid="test-todo-due-date" id="dueDate"></time>
+
+    <p data-testid="test-todo-time-remaining" id="timeRemaining" aria-live="polite"></p>
+
+    <p data-testid="test-todo-overdue-indicator" id="overdueIndicator" class="text-red-500 hidden">
+      Overdue
+    </p>
+
+    <!-- TAGS -->
+    <ul data-testid="test-todo-tags" class="flex gap-4 flex-wrap my-3">
+      <li data-testid="test-todo-tag-work" class="bg-gray-200 px-2 py-1 text-xs rounded">School</li>
+      <li data-testid="test-todo-tag-urgent" class="bg-red-200 px-2 py-1 text-xs rounded">Exam</li>
+    </ul>
+
+    <!-- CHECKBOX -->
+    <label class="flex items-center gap-2">
+      <input type="checkbox" data-testid="test-todo-complete-toggle" id="checkbox">
+      Complete
+    </label>
+
+    <!-- BUTTONS -->
+    <div class="flex gap-2 my-3">
+      <button data-testid="test-todo-edit-button" id="editBtn" class="bg-blue-500 text-white px-3 py-1 rounded">Edit</button>
+      <button data-testid="test-todo-delete-button" class="bg-red-500 text-white px-3 py-1 rounded">Delete</button>
+    </div>
+
+  </div>
+
+  <!-- EDIT MODE -->
+  <form id="editForm" data-testid="test-todo-edit-form" class="hidden space-y-2">
+
+    <input data-testid="test-todo-edit-title-input" id="editTitle" class="w-full border p-2" />
+
+    <textarea data-testid="test-todo-edit-description-input" id="editDesc" class="w-full border p-2"></textarea>
+
+    <select data-testid="test-todo-edit-priority-select" id="editPriority" class="w-full border p-2">
+      <option>Low</option>
+      <option>Medium</option>
+      <option>High</option>
+    </select>
+
+    <input type="datetime-local"
+      data-testid="test-todo-edit-due-date-input"
+      id="editDate"
+      class="w-full border p-2" />
+
+    <div class="flex gap-2">
+      <button type="button" data-testid="test-todo-save-button" id="saveBtn" class="bg-green-500 text-white px-3 py-1 rounded">Save</button>
+      <button type="button" data-testid="test-todo-cancel-button" id="cancelBtn" class="bg-gray-400 text-white px-3 py-1 rounded">Cancel</button>
+    </div>
+
+  </form>
+
+</article>
+
+<script>
+let state = {
+  title: "Study Data Structures",
+  desc: "Revise stacks, queues, linked lists, recursion and algorithm complexity in depth for upcoming exams.",
+  priority: "Medium",
+  status: "In Progress",
+  dueDate: new Date(Date.now() + 2*24*60*60*1000)
+};
+
+const el = id => document.getElementById(id);
+
+// EXPAND
+let expanded = false;
+el("expandBtn").onclick = () => {
+  expanded = !expanded;
+  el("descContainer").classList.toggle("max-h-16");
+  el("expandBtn").textContent = expanded ? "Show less" : "Show more";
+};
+
+// EDIT MODE
+el("editBtn").onclick = () => {
+  el("viewMode").classList.add("hidden");
+  el("editForm").classList.remove("hidden");
+
+  el("editTitle").value = state.title;
+  el("editDesc").value = state.desc;
+  el("editPriority").value = state.priority;
+};
+
+// CANCEL
+el("cancelBtn").onclick = () => {
+  el("editForm").classList.add("hidden");
+  el("viewMode").classList.remove("hidden");
+};
+
+// SAVE
+el("saveBtn").onclick = () => {
+  state.title = el("editTitle").value;
+  state.desc = el("editDesc").value;
+  state.priority = el("editPriority").value;
+
+  render();
+
+  el("editForm").classList.add("hidden");
+  el("viewMode").classList.remove("hidden");
+};
+
+// STATUS SYNC
+el("checkbox").onchange = () => {
+  state.status = el("checkbox").checked ? "Done" : "Pending";
+  render();
+};
+
+el("statusControl").onchange = () => {
+  state.status = el("statusControl").value;
+  el("checkbox").checked = state.status === "Done";
+  render();
+};
+
+// TIME LOGIC
+function updateTime() {
+  const now = new Date();
+  const diff = state.dueDate - now;
+
+  if (state.status === "Done") {
+    el("timeRemaining").textContent = "Completed";
+    return;
+  }
+
+  if (diff <= 0) {
+    el("overdueIndicator").classList.remove("hidden");
+    el("timeRemaining").textContent = "Overdue";
+    return;
+  }
+
+  const mins = Math.floor(diff / 60000);
+  const hours = Math.floor(mins / 60);
+  const days = Math.floor(hours / 24);
+
+  if (days > 0) el("timeRemaining").textContent = `Due in ${days} days`;
+  else if (hours > 0) el("timeRemaining").textContent = `Due in ${hours} hours`;
+  else el("timeRemaining").textContent = `Due in ${mins} minutes`;
+}
+
+// PRIORITY STYLE
+function updatePriorityUI() {
+  const map = {
+    Low: "bg-green-400",
+    Medium: "bg-yellow-400",
+    High: "bg-red-500"
+  };
+  el("priorityIndicator").className =
+    "w-2 h-full absolute left-0 top-0 rounded-l-xl " + map[state.priority];
+}
+
+// RENDER
+function render() {
+  el("title").textContent = state.title;
+  el("desc").textContent = state.desc;
+  el("priorityText").textContent = state.priority;
+  el("statusControl").value = state.status;
+
+  el("checkbox").checked = state.status === "Done";
+
+  if (state.status === "Done") {
+    el("title").classList.add("line-through", "text-gray-400");
+  } else {
+    el("title").classList.remove("line-through", "text-gray-400");
+  }
+
+  updatePriorityUI();
+}
+
+setInterval(updateTime, 60000);
+updateTime();
+render();
+</script>
+
+</body>
+</html>
